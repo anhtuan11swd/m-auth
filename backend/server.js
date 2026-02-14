@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import connectDB from "./config/mongodb.js";
+import authRouter from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -15,6 +16,9 @@ app.use(express.json());
 app.get("/", (_req, res) => {
   res.json({ message: "API đang hoạt động" });
 });
+
+// Auth routes
+app.use("/api/auth", authRouter);
 
 const PORT = 4000;
 
