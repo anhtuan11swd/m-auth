@@ -187,6 +187,148 @@ Auth API
 
 ---
 
+## 6. Is Authenticated
+
+**Method:** GET  
+**Endpoint:** `/is-auth`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Cookie Required:** `token` (from login/register)
+
+**Expected Response (200):**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## 7. Send Reset OTP
+
+**Method:** POST  
+**Endpoint:** `/send-reset-otp`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body (raw JSON):**
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Expected Response (200):**
+```json
+{
+  "success": true,
+  "message": "OTP đã được gửi"
+}
+```
+
+**Email Sent:** Reset OTP code (valid for 15 minutes)
+
+---
+
+## 8. Reset Password
+
+**Method:** POST  
+**Endpoint:** `/reset-password`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body (raw JSON):**
+```json
+{
+  "email": "john@example.com",
+  "otp": "123456",
+  "newPassword": "newpassword123"
+}
+```
+
+**Expected Response (200):**
+```json
+{
+  "success": true,
+  "message": "Mật khẩu đã được đặt lại"
+}
+```
+
+---
+
+## User API
+
+**Base URL:**
+```
+http://localhost:4000/api/user
+```
+
+## 9. Get User Data
+
+**Method:** GET  
+**Endpoint:** `/data`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Cookie Required:** `token` (from login/register)
+
+**Expected Response (200):**
+```json
+{
+  "success": true,
+  "userData": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "isAccountVerified": true
+  }
+}
+```
+
+---
+
+## Postman Configuration
+
+### Enable Cookie Handling
+1. Go to **Settings** → **General**
+2. Enable **"Send cookies automatically"**
+3. Enable **"Store cookies across requests"**
+
+### Test Collection Structure
+```
+Auth API
+├── Register
+├── Login
+├── Logout
+├── Send Verify OTP
+├── Verify Account
+├── Is Authenticated
+├── Send Reset OTP
+└── Reset Password
+
+User API
+└── Get User Data
+```
+
+### Environment Variables (Optional)
+| Variable | Value |
+|----------|-------|
+| base_url | http://localhost:4000 |
+
+---
+
 ## Error Responses
 
 | Status | Message | Cause |

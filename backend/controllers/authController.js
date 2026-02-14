@@ -251,3 +251,130 @@ export const verifyEmail = async (req, res) => {
     });
   }
 };
+
+// Kiểm tra trạng thái đăng nhập
+export const isAuthenticated = async (_req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("Lỗi kiểm tra xác thực:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      success: false,
+    });
+  }
+};
+
+// Gửi OTP đặt lại mật khẩu
+export const sendResetOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Kiểm tra email
+    if (!email) {
+      return res.status(400).json({
+        message: "Vui lòng cung cấp email",
+        success: false,
+      });
+    }
+
+    // Tìm ngườii dùng theo email
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy ngườii dùng",
+        success: false,
+      });
+    }
+
+    // Tạo OTP 6 chữ số
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Lưu OTP và thờii gian hết hạn (15 phút)
+    user.resetOtp = otp;
+    user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+    // Gửi email chứa OTP
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      subject: "Mã đặt lại mật khẩu của bạn",
+      text: `Mã OTP đặt lại mật khẩu của bạn là: ${otp}. Mã có hiệu lực trong 15 phút.`,
+      to: email,
+    };
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({
+      message: "OTP đã được gửi",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Lỗi gửi OTP đặt lại mật khẩu:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      success: false,
+    });
+  }
+};
+
+// Đặt lại mật khẩu
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Kiểm tra dữ liệu đầu vào
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        message: "Vui lòng điền đầy đủ thông tin",
+        success: false,
+      });
+    }
+
+    // Tìm ngườii dùng theo email
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy ngườii dùng",
+        success: false,
+      });
+    }
+
+    // Kiểm tra OTP có khớp không
+    if (user.resetOtp !== otp || user.resetOtp === "") {
+      return res.status(400).json({
+        message: "Mã OTP không hợp lệ",
+        success: false,
+      });
+    }
+
+    // Kiểm tra OTP đã hết hạn chưa
+    if (user.resetOtpExpireAt < Date.now()) {
+      return res.status(400).json({
+        message: "Mã OTP đã hết hạn",
+        success: false,
+      });
+    }
+
+    // Mã hóa mật khẩu mớii
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Cập nhật mật khẩu và xóa OTP
+    user.password = hashedPassword;
+    user.resetOtp = "";
+    user.resetOtpExpireAt = 0;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Mật khẩu đã được đặt lại",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Lỗi đặt lại mật khẩu:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      success: false,
+    });
+  }
+};

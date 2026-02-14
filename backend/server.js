@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 import connectDB from "./config/mongodb.js";
 import authRouter from "./routes/authRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.get("/", (_req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRouter);
+
+// User routes
+app.use("/api/user", userRouter);
 
 const PORT = 4000;
 

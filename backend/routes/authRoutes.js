@@ -1,8 +1,11 @@
 import express from "express";
 import {
+  isAuthenticated,
   login,
   logout,
   register,
+  resetPassword,
+  sendResetOTP,
   sendVerifyOTP,
   verifyEmail,
 } from "../controllers/authController.js";
@@ -24,5 +27,14 @@ authRouter.post("/send-verify-otp", userAuth, sendVerifyOTP);
 
 // Route xác thực email
 authRouter.post("/verify-account", userAuth, verifyEmail);
+
+// Route kiểm tra trạng thái đăng nhập
+authRouter.get("/is-auth", userAuth, isAuthenticated);
+
+// Route gửi OTP đặt lại mật khẩu
+authRouter.post("/send-reset-otp", sendResetOTP);
+
+// Route đặt lại mật khẩu
+authRouter.post("/reset-password", resetPassword);
 
 export default authRouter;
