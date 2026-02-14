@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import transporter from "../config/nodemailer.js";
 import userModel from "../models/userModel.js";
 
 // Đăng ký người dùng mới
@@ -47,6 +48,15 @@ export const register = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       secure: process.env.NODE_ENV === "production",
     });
+
+    // Gửi email chào mừng
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      subject: "Chào mừng đến với GreatStack",
+      text: `Chào mừng! Tài khoản của bạn: ${email}`,
+      to: email,
+    };
+    await transporter.sendMail(mailOptions);
 
     return res.status(201).json({
       message: "Đăng ký thành công",
@@ -134,6 +144,107 @@ export const logout = async (_req, res) => {
     });
   } catch (error) {
     console.error("Lỗi đăng xuất:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      success: false,
+    });
+  }
+};
+
+// Gửi OTP xác thực
+export const sendVerifyOTP = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Tìm ngườii dùng
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy ngườii dùng",
+        success: false,
+      });
+    }
+
+    // Kiểm tra đã xác thực chưa
+    if (user.isAccountVerified) {
+      return res.status(400).json({
+        message: "Tài khoản đã được xác thực",
+        success: false,
+      });
+    }
+
+    // Tạo OTP 6 chữ số
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Lưu OTP và thờii gian hết hạn (24 giờ)
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    // Gửi email chứa OTP
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      subject: "Xác thực tài khoản",
+      text: `Mã OTP xác thực của bạn là: ${otp}. Mã có hiệu lực trong 24 giờ.`,
+      to: user.email,
+    };
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({
+      message: "Đã gửi OTP xác thực",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Lỗi gửi OTP:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      success: false,
+    });
+  }
+};
+
+// Xác thực email bằng OTP
+export const verifyEmail = async (req, res) => {
+  try {
+    const { userId, otp } = req.body;
+
+    // Tìm ngườii dùng
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy ngườii dùng",
+        success: false,
+      });
+    }
+
+    // Kiểm tra OTP có khớp không
+    if (user.verifyOtp !== otp || user.verifyOtp === "") {
+      return res.status(400).json({
+        message: "Mã OTP không hợp lệ",
+        success: false,
+      });
+    }
+
+    // Kiểm tra OTP đã hết hạn chưa
+    if (user.verifyOtpExpireAt < Date.now()) {
+      return res.status(400).json({
+        message: "Mã OTP đã hết hạn",
+        success: false,
+      });
+    }
+
+    // Đánh dấu tài khoản đã xác thực
+    user.isAccountVerified = true;
+    user.verifyOtp = "";
+    user.verifyOtpExpireAt = 0;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Email đã được xác thực",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Lỗi xác thực email:", error);
     return res.status(500).json({
       message: "Lỗi server",
       success: false,
