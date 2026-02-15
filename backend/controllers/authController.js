@@ -1,5 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import {
+  emailVerifyTemplate,
+  passwordResetTemplate,
+} from "../config/emailTemplates.js";
 import transporter from "../config/nodemailer.js";
 import userModel from "../models/userModel.js";
 
@@ -184,8 +188,10 @@ export const sendVerifyOTP = async (req, res) => {
     // Gửi email chứa OTP
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
-      subject: "Xác thực tài khoản",
-      text: `Mã OTP xác thực của bạn là: ${otp}. Mã có hiệu lực trong 24 giờ.`,
+      html: emailVerifyTemplate
+        .replace("{{OTP}}", otp)
+        .replace("{{email}}", user.email),
+      subject: "Account Verification OTP",
       to: user.email,
     };
     await transporter.sendMail(mailOptions);
@@ -300,8 +306,10 @@ export const sendResetOTP = async (req, res) => {
     // Gửi email chứa OTP
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
-      subject: "Mã đặt lại mật khẩu của bạn",
-      text: `Mã OTP đặt lại mật khẩu của bạn là: ${otp}. Mã có hiệu lực trong 15 phút.`,
+      html: passwordResetTemplate
+        .replace("{{OTP}}", otp)
+        .replace("{{email}}", user.email),
+      subject: "Password Reset OTP",
       to: email,
     };
     await transporter.sendMail(mailOptions);
