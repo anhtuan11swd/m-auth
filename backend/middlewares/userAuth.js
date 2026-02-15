@@ -16,6 +16,11 @@ const userAuth = async (req, res, next) => {
     // Xác thực token JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Khởi tạo req.body nếu chưa có
+    if (!req.body) {
+      req.body = {};
+    }
+
     // Thêm userId vào request body
     req.body.userId = decoded.id;
 

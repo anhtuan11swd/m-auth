@@ -29,6 +29,7 @@
     "dev": "vite",
     "format": "biome format --write",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "lint2": "biome lint --write",
     "preview": "vite preview"
   },

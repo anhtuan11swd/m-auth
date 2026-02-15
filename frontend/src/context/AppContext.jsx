@@ -1,4 +1,6 @@
-import { useState } from "react";
+import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { AppContext } from "./AppContext.js";
 
 export const AppContextProvider = ({ children }) => {
@@ -7,18 +9,11 @@ export const AppContextProvider = ({ children }) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Hàm lấy dữ liệu người dùng từ API
-  const getUserData = async () => {
+  const getUserData = useCallback(async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/user/data`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      axios.defaults.withCredentials = true;
+      const { data } = await axios.get(`${backendUrl}/api/user/data`);
+      if (data.success) {
         setUserData(data.userData);
         setIsLoggedIn(true);
       } else {
@@ -30,39 +25,48 @@ export const AppContextProvider = ({ children }) => {
       setIsLoggedIn(false);
       setUserData(false);
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Hàm kiểm tra trạng thái xác thực
-  const getAuthState = async () => {
-    try {
-      const response = await fetch(`${backendUrl}/api/auth/is-auth`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-
-      if (response.ok) {
-        setIsLoggedIn(true);
-        // Fetch user data separately since is-auth doesn't return it
-        await getUserData();
-      } else {
+  useEffect(() => {
+    // Hàm kiểm tra trạng thái xác thực
+    const getAuthState = async () => {
+      try {
+        axios.defaults.withCredentials = true;
+        const { data } = await axios.get(`${backendUrl}/api/auth/is-auth`);
+        if (data.success) {
+          setIsLoggedIn(true);
+          await getUserData();
+        }
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra xác thực:", error);
         setIsLoggedIn(false);
         setUserData(false);
       }
+    };
+
+    getAuthState();
+  }, [getUserData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hàm đăng xuất
+  const logout = async () => {
+    try {
+      axios.defaults.withCredentials = true;
+      const { data } = await axios.post(`${backendUrl}/api/auth/logout`);
+      if (data.success) {
+        setIsLoggedIn(false);
+        setUserData(false);
+        toast.success(data.message);
+      }
     } catch (error) {
-      console.error("Lỗi khi kiểm tra xác thực:", error);
-      setIsLoggedIn(false);
-      setUserData(false);
+      console.error("Lỗi khi đăng xuất:", error);
     }
   };
 
   const value = {
     backendUrl,
-    getAuthState,
     getUserData,
     isLoggedIn,
+    logout,
     setIsLoggedIn,
     setUserData,
     userData,

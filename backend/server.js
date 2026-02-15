@@ -9,7 +9,13 @@ import userRouter from "./routes/userRoutes.js";
 const app = express();
 
 // Middleware
-app.use(cors({ credentials: true }));
+const allowedOrigins = ["http://localhost:5173"];
+app.use(
+  cors({
+    credentials: true,
+    origin: allowedOrigins,
+  }),
+);
 app.use(cookieParser());
 app.use(express.json());
 
