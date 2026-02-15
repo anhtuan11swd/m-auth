@@ -1,12 +1,31 @@
+import axios from "axios";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 import { AppContext } from "../context/AppContext.js";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { userData, logout } = useContext(AppContext);
+  const { userData, logout, backendUrl } = useContext(AppContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const sendVerificationOTP = async () => {
+    try {
+      axios.defaults.withCredentials = true;
+      const { data } = await axios.post(
+        `${backendUrl}/api/auth/send-verify-otp`,
+      );
+      if (data.success) {
+        navigate("/email-verify");
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -58,7 +77,7 @@ const Navbar = () => {
                     <li>
                       <button
                         className="flex items-center gap-3 hover:bg-indigo-50 px-4 py-2.5 w-full text-gray-700 hover:text-indigo-600 text-sm text-left transition-colors duration-150 cursor-pointer"
-                        onClick={() => navigate("/email-verify")}
+                        onClick={sendVerificationOTP}
                         type="button"
                       >
                         <svg
